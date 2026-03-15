@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      width: 360px;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      color: #111b21;
+    }
+    h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+      color: #008069;
+    }
+    .instructions {
+      background: #f0f2f5;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #54656f;
+    }
+    .group-section {
+      margin-bottom: 12px;
+      padding: 10px;
+      border: 1px solid #e9edef;
+      border-radius: 8px;
+    }
+    .group-label {
+      font-weight: 600;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .member-count {
+      font-weight: normal;
+      font-size: 12px;
+      color: #667781;
+    }
+    button {
+      background: #008069;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: 14px;
+      width: 100%;
+      margin-bottom: 8px;
+    }
+    button:hover {
+      background: #006b57;
+    }
+    button:disabled {
+      background: #a0a0a0;
+      cursor: not-allowed;
+    }
+    button.secondary {
+      background: #f0f2f5;
+      color: #008069;
+      border: 1px solid #008069;
+    }
+    button.secondary:hover {
+      background: #e2e8eb;
+    }
+    #status {
+      font-size: 12px;
+      color: #667781;
+      margin-bottom: 8px;
+      min-height: 18px;
+    }
+    #results {
+      display: none;
+    }
+    #results h3 {
+      font-size: 14px;
+      margin: 8px 0;
+      color: #008069;
+    }
+    .member-list {
+      max-height: 200px;
+      overflow-y: auto;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+    .member-list div {
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .member-list div:nth-child(odd) {
+      background: #f0f2f5;
+    }
+    .clear-btn {
+      background: none;
+      border: none;
+      color: #e74c3c;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 2px 6px;
+      width: auto;
+      margin: 0;
+    }
+    .clear-btn:hover {
+      text-decoration: underline;
+      background: none;
+    }
+  </style>
+</head>
+<body>
+  <h2>WhatsApp Group Compare</h2>
+
+  <div class="instructions">
+    <strong>How to use:</strong><br>
+    1. Open a WhatsApp group chat<br>
+    2. Click "Capture" below (it will auto-scroll to get all members)<br>
+    3. Open the second group chat and capture it<br>
+    4. Click "Find Common Members"<br>
+    <em>Note: Large groups may take 10-30 seconds to capture.</em>
+  </div>
+
+  <div class="group-section">
+    <div class="group-label">
+      <span>Group A: <span id="groupA-name">Not captured</span></span>
+      <span><span id="groupA-count" class="member-count"></span> <button class="clear-btn" id="clearA" style="display:none">clear</button></span>
+    </div>
+    <button id="captureA">Capture Group A</button>
+  </div>
+
+  <div class="group-section">
+    <div class="group-label">
+      <span>Group B: <span id="groupB-name">Not captured</span></span>
+      <span><span id="groupB-count" class="member-count"></span> <button class="clear-btn" id="clearB" style="display:none">clear</button></span>
+    </div>
+    <button id="captureB">Capture Group B</button>
+  </div>
+
+  <div id="status"></div>
+
+  <button id="compare" disabled>Find Common Members</button>
+
+
+  <div id="results">
+    <h3 id="results-title"></h3>
+    <div id="common-list" class="member-list"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

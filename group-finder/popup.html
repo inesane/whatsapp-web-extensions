@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      width: 380px;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      color: #111b21;
+    }
+    h2 { margin: 0 0 12px; font-size: 18px; color: #008069; }
+    .instructions {
+      background: #f0f2f5; border-radius: 8px; padding: 10px 12px;
+      margin-bottom: 12px; font-size: 12px; line-height: 1.5; color: #54656f;
+    }
+    .contact-tags {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; min-height: 10px;
+    }
+    .tag {
+      background: #e7f8f5; color: #008069; border-radius: 16px;
+      padding: 4px 10px; font-size: 13px; display: flex; align-items: center; gap: 4px;
+    }
+    .tag .count { color: #667781; font-size: 11px; }
+    .tag .remove {
+      cursor: pointer; font-weight: bold; color: #667781;
+      margin-left: 2px; font-size: 16px; line-height: 1;
+    }
+    .tag .remove:hover { color: #e74c3c; }
+    button {
+      background: #008069; color: white; border: none; border-radius: 8px;
+      padding: 10px 16px; cursor: pointer; font-size: 14px; width: 100%; margin-bottom: 8px;
+    }
+    button:hover { background: #006b57; }
+    button:disabled { background: #a0a0a0; cursor: not-allowed; }
+    button.secondary {
+      background: #f0f2f5; color: #008069; border: 1px solid #008069;
+    }
+    button.secondary:hover { background: #e2e8eb; }
+    #status {
+      font-size: 12px; color: #667781; margin-bottom: 8px; min-height: 18px;
+    }
+    .results-section { display: none; }
+    .results-section h3 { font-size: 14px; margin: 12px 0 6px; color: #008069; }
+    .group-list {
+      max-height: 250px; overflow-y: auto; font-size: 13px; line-height: 1.8;
+    }
+    .group-list div { padding: 2px 8px; border-radius: 4px; }
+    .group-list div:nth-child(odd) { background: #f0f2f5; }
+    .no-results { color: #667781; padding: 8px; font-style: italic; }
+  </style>
+</head>
+<body>
+  <h2>WhatsApp Group Finder</h2>
+
+  <div class="instructions">
+    1. Open a 1-on-1 chat with a contact<br>
+    2. Click "Add Contact" to capture their common groups<br>
+    3. Repeat for each contact<br>
+    4. Click "Find Groups" to see groups containing all of them<br>
+    <em>Note: Each contact takes 10-30s to process.</em>
+  </div>
+
+  <button id="addContact">Add Contact</button>
+
+  <div class="contact-tags" id="contactTags"></div>
+
+  <div id="status"></div>
+
+  <button id="findGroups" disabled>Find Groups</button>
+
+  <div class="results-section" id="exactResults">
+    <h3></h3>
+    <div class="group-list" id="exactList"></div>
+  </div>
+
+  <div class="results-section" id="commonResults">
+    <h3></h3>
+    <div class="group-list" id="commonList"></div>
+  </div>
+
+  <button class="secondary" id="clearAll" style="display:none">Clear all</button>
+
+  <script src="popup.js"></script>
+</body>
+</html>

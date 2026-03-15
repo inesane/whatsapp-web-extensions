@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "WhatsApp Group Finder",
+  "version": "1.0",
+  "description": "Find WhatsApp groups that contain a specific set of contacts",
+  "permissions": ["activeTab", "storage", "scripting"],
+  "content_scripts": [
+    {
+      "matches": ["https://web.whatsapp.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "48": "icon48.png"
+    }
+  },
+  "icons": {
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "WhatsApp Group Compare",
+  "version": "1.0",
+  "description": "Find common members between WhatsApp groups",
+  "permissions": ["activeTab", "storage", "scripting"],
+  "content_scripts": [
+    {
+      "matches": ["https://web.whatsapp.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "48": "icon48.png"
+    }
+  },
+  "icons": {
+    "48": "icon48.png"
+  }
+}

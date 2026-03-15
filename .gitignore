@@ -1,0 +1,27 @@
+# Chrome profile data
+chrome_profile/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Test/debug scripts
+selenium_test.py
+selenium_inspect.py
+
+# Extension packages
+*.zip
+*.crx
+*.pem
