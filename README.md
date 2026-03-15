@@ -33,7 +33,7 @@ Groups where the member count exactly matches your selected contacts + you are h
 3. Click **Load unpacked**
 4. Select either the `group-compare/` or `group-finder/` folder
 
-Both extensions require WhatsApp Web to be open in the active tab.
+I'll add them to the chrome extensions web store soon.
 
 ## How It Works
 
