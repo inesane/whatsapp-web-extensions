@@ -25,3 +25,6 @@ selenium_inspect.py
 *.zip
 *.crx
 *.pem
+
+# Images
+images/
