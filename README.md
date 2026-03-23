@@ -4,7 +4,7 @@ Chrome extensions for WhatsApp Web that help manage and analyze your groups and 
 
 ## Extensions
 
-### Group Compare
+### Group Compare — [Install from Chrome Web Store](https://chromewebstore.google.com/detail/whatsapp-group-compare/lmpekhlnfncmgkhimmdnddfgfihhpeje)
 
 Find common members between two WhatsApp groups.
 
@@ -33,7 +33,7 @@ Groups where the member count exactly matches your selected contacts + you are h
 3. Click **Load unpacked**
 4. Select either the `group-compare/` or `group-finder/` folder
 
-I'll add them to the chrome extensions web store soon.
+Group Compare is available on the [Chrome Web Store](https://chromewebstore.google.com/detail/whatsapp-group-compare/lmpekhlnfncmgkhimmdnddfgfihhpeje). Group Finder will be available soon.
 
 ## How It Works
 
