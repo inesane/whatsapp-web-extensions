@@ -16,8 +16,15 @@ chrome.storage.local.get(["groupA", "groupB"], (data) => {
 
 function updateGroupUI(label, group) {
   document.getElementById(`group${label}-name`).textContent = group.name;
-  document.getElementById(`group${label}-count`).textContent = `(${group.members.length} members)`;
+  const countEl = document.getElementById(`group${label}-count`);
+  countEl.textContent = `(${group.members.length} members)`;
   document.getElementById(`clear${label}`).style.display = "inline";
+
+  const membersEl = document.getElementById(`group${label}-members`);
+  membersEl.innerHTML = group.members.map(m => `<div>${m}</div>`).join("");
+  countEl.onclick = () => {
+    membersEl.style.display = membersEl.style.display === "block" ? "none" : "block";
+  };
 }
 
 function setStatus(msg, isError = false) {
@@ -96,6 +103,8 @@ function clearGroup(label) {
   }
   document.getElementById(`group${label}-name`).textContent = "Not captured";
   document.getElementById(`group${label}-count`).textContent = "";
+  document.getElementById(`group${label}-members`).innerHTML = "";
+  document.getElementById(`group${label}-members`).style.display = "none";
   document.getElementById(`clear${label}`).style.display = "none";
   document.getElementById("results").style.display = "none";
   updateCompareButton();

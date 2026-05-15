@@ -108,6 +108,22 @@
       text-decoration: underline;
       background: none;
     }
+    .member-count {
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .captured-members {
+      display: none;
+      max-height: 150px;
+      overflow-y: auto;
+      font-size: 12px;
+      line-height: 1.7;
+      margin-top: 6px;
+      background: #f0f2f5;
+      border-radius: 6px;
+      padding: 6px 8px;
+    }
   </style>
 </head>
 <body>
@@ -127,6 +143,7 @@
       <span>Group A: <span id="groupA-name">Not captured</span></span>
       <span><span id="groupA-count" class="member-count"></span> <button class="clear-btn" id="clearA" style="display:none">clear</button></span>
     </div>
+    <div id="groupA-members" class="captured-members"></div>
     <button id="captureA">Capture Group A</button>
   </div>
 
@@ -135,6 +152,7 @@
       <span>Group B: <span id="groupB-name">Not captured</span></span>
       <span><span id="groupB-count" class="member-count"></span> <button class="clear-btn" id="clearB" style="display:none">clear</button></span>
     </div>
+    <div id="groupB-members" class="captured-members"></div>
     <button id="captureB">Capture Group B</button>
   </div>
 

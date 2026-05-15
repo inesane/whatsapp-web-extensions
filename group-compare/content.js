@@ -1,6 +1,11 @@
 // Content script - extracts full group member names
 // Flow: click header → open group info → click "View all" → scroll & collect
 
+if (window.__gcLoaded) {
+  // Already injected — skip re-declaration to avoid "already declared" errors
+} else {
+window.__gcLoaded = true;
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "captureMembers") {
     captureGroupMembers().then(sendResponse);
@@ -9,48 +14,42 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 async function captureGroupMembers() {
-  // Step 1: Find the chat header to get group name and verify a group is open
   const chatHeader = findChatHeader();
   if (!chatHeader) {
     return { success: false, error: "No chat is open. Please open a group chat first." };
   }
 
-  // Get group name from header
   const groupName = getGroupName(chatHeader);
 
-  // Check if this is a group (header subtitle has comma-separated members)
-  const isGroup = checkIsGroup(chatHeader);
+  // Retry for up to 4s to let the subtitle load before checking
+  let isGroup = false;
+  for (let i = 0; i < 8; i++) {
+    isGroup = checkIsGroup(chatHeader);
+    if (isGroup) break;
+    await sleep(500);
+  }
   if (!isGroup) {
     return { success: false, error: "This doesn't appear to be a group chat. Please open a group chat." };
   }
 
-  // Step 2: Click the header to open group info panel
-  const headerBtn = chatHeader.querySelector('div[role="button"]');
   const clickTarget = Array.from(chatHeader.querySelectorAll('div[role="button"]'))
     .find(b => b.getBoundingClientRect().width > 100);
-
   if (!clickTarget) {
     return { success: false, error: "Could not find group name button in header." };
   }
 
   clickTarget.click();
-  await sleep(2000);
+  await sleep(2500);
 
-  // Step 3: Look for "View all" button and click it
   const viewAllBtn = findViewAllButton();
   if (viewAllBtn) {
     viewAllBtn.click();
-    await sleep(2000);
+    await sleep(2500);
   }
 
-  // Step 4: Scroll through the member list and collect all names
   const members = await scrollAndCollectMembers();
 
-  // Step 5: Close the panel by pressing Escape
-  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-  await sleep(500);
-  // Press escape again to close group info panel too
-  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  closeMemberListPanel();
 
   if (members.length === 0) {
     return { success: false, error: "Could not find any members. Try again." };
@@ -75,11 +74,6 @@ function findChatHeader() {
 }
 
 function getGroupName(header) {
-  // The group name is the first large visible text span in the header
-  // (positioned at the top, y ~ 11, height ~ 21)
-  // For community groups, the group name has NO title attribute
-  // For regular groups, the group name also has NO title attribute
-  // The subtitle (member list or community name) is below it (y ~ 32)
   const spans = header.querySelectorAll("span");
   let topSpan = null;
   let topY = Infinity;
@@ -89,12 +83,8 @@ function getGroupName(header) {
     const rect = span.getBoundingClientRect();
     if (!text || text.length === 0 || text.length > 100) continue;
     if (rect.width < 50 || rect.height < 10) continue;
-    // Skip icon text
     if (text.includes("-refreshed") || text.includes("ic-")) continue;
-    // Skip member list
     if ((text.match(/,/g) || []).length >= 2) continue;
-
-    // Pick the topmost (smallest y) visible text span
     if (rect.y < topY) {
       topY = rect.y;
       topSpan = span;
@@ -106,90 +96,169 @@ function getGroupName(header) {
 
 function checkIsGroup(header) {
   const headerText = header.textContent || "";
-  // 1-on-1 chats have "default-contact-refreshed" icon — definitely not a group
   if (headerText.includes("default-contact-refreshed")) return false;
-  // Regular groups: subtitle has comma-separated member names
+  if (headerText.includes("community-refreshed")) return true;
+  if (headerText.includes("default-group-refreshed")) return true;
   for (const span of header.querySelectorAll("span[title]")) {
     const title = span.getAttribute("title") || "";
     if ((title.match(/,/g) || []).length >= 2) return true;
   }
-  // Community groups: header contains community or group icon text
-  if (headerText.includes("community-refreshed")) return true;
-  if (headerText.includes("default-group-refreshed")) return true;
+  for (const span of header.querySelectorAll("span")) {
+    const text = span.textContent?.trim() || "";
+    if (/^\d+\s+members?$/i.test(text)) return true;
+  }
   return false;
 }
 
 function findViewAllButton() {
-  const buttons = document.querySelectorAll('div[role="button"]');
-  for (const btn of buttons) {
+  const isMatch = text => /view (all|more)/i.test(text) || /^\+?\d+\s+more$/i.test(text);
+  const inRightPanel = el => {
+    const rect = el.getBoundingClientRect();
+    return rect.width > 10 && rect.x > 300;
+  };
+
+  for (const btn of document.querySelectorAll('div[role="button"]')) {
     const text = btn.textContent?.trim() || "";
-    if (/view all/i.test(text) && text.length < 40) {
-      return btn;
-    }
+    if (isMatch(text) && text.length < 60 && inRightPanel(btn)) return btn;
   }
+
+  for (const el of document.querySelectorAll('div, span, li')) {
+    if (el.children.length > 8) continue;
+    const text = el.textContent?.trim() || "";
+    if (isMatch(text) && text.length < 60 && inRightPanel(el)) return el;
+  }
+
   return null;
 }
 
 async function scrollAndCollectMembers() {
-  const allMembers = new Set();
+  const allMembers = new Map();
 
-  // Collect visible members
   collectVisibleMembers(allMembers);
 
-  // Find the scrollable container (rightmost, largest scrollHeight)
-  for (let i = 0; i < 200; i++) {
-    const scrollResult = scrollRightPanel();
-    if (!scrollResult) break;
+  const panel = findMemberPanel();
+  if (!panel) return Array.from(allMembers.values());
 
-    await sleep(300);
+  for (let i = 0; i < 200; i++) {
     collectVisibleMembers(allMembers);
 
-    if (scrollResult.atBottom) break;
+    const prev = panel.scrollTop;
+    const max = panel.scrollHeight - panel.clientHeight;
+    panel.scrollTop += 400;
+
+    await waitForStable(allMembers);
+    collectVisibleMembers(allMembers);
+
+    if (panel.scrollTop >= max - 5 || panel.scrollTop === prev) break;
   }
 
-  return Array.from(allMembers);
+  const nameCounts = new Map();
+  for (const { name } of allMembers.values()) {
+    nameCounts.set(name, (nameCounts.get(name) || 0) + 1);
+  }
+
+  return Array.from(allMembers.values()).map(({ name, phone }) => {
+    const isDuplicate = nameCounts.get(name) > 1;
+    const isUnsaved = name.startsWith("~");
+    return ((isDuplicate || isUnsaved) && phone) ? `${name} (${phone})` : name;
+  });
 }
 
-function collectVisibleMembers(memberSet) {
+function findMemberPanel() {
+  const memberSpans = Array.from(document.querySelectorAll('span[title]')).filter(span => {
+    const rect = span.getBoundingClientRect();
+    if (rect.x < 300 || rect.width < 10) return false;
+    if (span.closest('[role="row"]')) return false;
+    if (!span.closest('[role="gridcell"]')) return false;
+    const title = span.getAttribute("title");
+    return title && title !== "Loading…" && title !== "You";
+  });
+
+  if (memberSpans.length === 0) return null;
+
+  let el = memberSpans[0].parentElement;
+  while (el && el !== document.body) {
+    if (el.scrollHeight > el.clientHeight + 20) return el;
+    el = el.parentElement;
+  }
+  return null;
+}
+
+function collectVisibleMembers(memberMap) {
   document.querySelectorAll('span[title]').forEach(span => {
     const rect = span.getBoundingClientRect();
-    // Must be in the right area (not chat list)
     if (rect.x < 300 || rect.width < 10) return;
-    // Must NOT be in a chat list row
     if (span.closest('[role="row"]')) return;
-    // Must be inside a gridcell (member names are, status text is not)
     if (!span.closest('[role="gridcell"]')) return;
 
     const title = span.getAttribute("title");
     if (!title || title === "Loading…" || title === "You") return;
 
-    memberSet.add(title);
+    let container = span.parentElement;
+    while (container && container !== document.body && container.children.length <= 1) {
+      container = container.parentElement;
+    }
+    let phone = null;
+    if (container) {
+      for (const child of container.children) {
+        if (child.contains(span)) continue;
+        const t = child.textContent?.trim() || "";
+        if (!t || isNonPhoneText(t)) continue;
+        // Extract phone number from text — it may be followed by a status message
+        const match = t.match(/\+[\d\s\-().]{5,}/);
+        if (match) { phone = match[0].trim(); break; }
+      }
+    }
+
+    const isPhone = !!phone;
+    const key = isPhone ? `${title}|||${phone}` : title;
+
+    if (memberMap.has(key)) return;
+
+    if (isPhone) {
+      if (memberMap.has(title)) memberMap.delete(title);
+    } else {
+      if (Array.from(memberMap.keys()).some(k => k.startsWith(`${title}|||`))) return;
+    }
+
+    memberMap.set(key, { name: title, phone: isPhone ? phone : null });
   });
 }
 
-function scrollRightPanel() {
-  const divs = document.querySelectorAll("div");
-  let best = null;
-  for (const div of divs) {
-    const rect = div.getBoundingClientRect();
-    if (rect.x < 250 || rect.width < 100) continue;
-    if (div.scrollHeight > div.clientHeight + 20) {
-      if (!best || div.scrollHeight > best.scrollHeight) {
-        best = div;
-      }
+function closeMemberListPanel() {
+  const btn = document.querySelector('button[aria-label="Close"][data-tab="2"]');
+  if (btn) { btn.click(); return; }
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+}
+
+const NON_PHONE_TEXTS = new Set(["group admin", "admin", "you"]);
+function isNonPhoneText(t) {
+  return NON_PHONE_TEXTS.has(t.toLowerCase());
+}
+
+async function waitForStable(memberMap) {
+  const timeout = 1500;
+  const interval = 100;
+  const stableNeeded = 2;
+  const start = Date.now();
+  let stableCount = 0;
+  let lastSize = memberMap.size;
+
+  while (Date.now() - start < timeout) {
+    await sleep(interval);
+    collectVisibleMembers(memberMap);
+    if (memberMap.size === lastSize) {
+      stableCount++;
+      if (stableCount >= stableNeeded) break;
+    } else {
+      stableCount = 0;
+      lastSize = memberMap.size;
     }
   }
-  if (!best) return null;
-
-  const prev = best.scrollTop;
-  const max = best.scrollHeight - best.clientHeight;
-  best.scrollTop += 400;
-
-  return {
-    atBottom: best.scrollTop >= max - 5 || best.scrollTop === prev
-  };
 }
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+} // end if (!window.__gcLoaded)
